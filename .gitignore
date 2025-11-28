@@ -1,0 +1,14 @@
+deepfake_env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+instance/
+uploads/
+model/
+*.mp4
+*.avi
+*.mov
+*.jpg
+*.png

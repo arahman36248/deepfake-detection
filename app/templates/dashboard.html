@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Deepfake Detection{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="fas fa-chart-bar"></i> Dashboard</h2>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Total Analyses</h5>
+                <h2 class="text-primary">{{ stats.total }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Fake Detected</h5>
+                <h2 class="text-danger">{{ stats.fake }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Real Detected</h5>
+                <h2 class="text-success">{{ stats.real }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Avg Confidence</h5>
+                <h2 class="text-info">{{ "%.4f"|format(stats.avg_confidence) }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Analyses -->
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">Recent Analyses</h4>
+    </div>
+    <div class="card-body">
+        {% if analyses %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>File</th>
+                        <th>Type</th>
+                        <th>Result</th>
+                        <th>Confidence</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for analysis in analyses %}
+                    <tr>
+                        <td>{{ analysis.filename }}</td>
+                        <td>
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-{{ 'image' if analysis.file_type == 'image' else 'video' }}"></i>
+                                {{ analysis.file_type }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ 'danger' if analysis.prediction == 'FAKE' else 'success' }}">
+                                {{ analysis.prediction }}
+                            </span>
+                        </td>
+                        <td>{{ "%.4f"|format(analysis.confidence) }}</td>
+                        <td>{{ analysis.upload_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center">No analyses yet. <a href="{{ url_for('main.index') }}">Upload a file</a> to get started.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

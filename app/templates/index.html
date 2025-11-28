@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Upload - Deepfake Detection{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0"><i class="fas fa-upload"></i> Deepfake Detection</h3>
+            </div>
+            <div class="card-body">
+                <p class="lead">Upload image or video to detect deepfakes</p>
+                
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="fileInput" class="form-label">Select File</label>
+                        <input type="file" class="form-control" id="fileInput" name="file" 
+                               accept="image/*,video/*" required>
+                        <small class="text-muted">
+                            Supported formats: JPG, PNG, MP4, AVI, MOV (Max: 500MB)
+                        </small>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-lg w-100" id="analyzeBtn">
+                        <i class="fas fa-search"></i> Analyze
+                    </button>
+                </form>
+                
+                <!-- Progress -->
+                <div id="progressContainer" class="mt-4" style="display: none;">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 100%">
+                            Analyzing...
+                        </div>
+                    </div>
+                    <p class="text-center mt-2">Please wait while we analyze your file...</p>
+                </div>
+                
+                <!-- Results -->
+                <div id="resultsContainer" class="mt-4" style="display: none;">
+                    <div class="card">
+                        <div class="card-header" id="resultHeader">
+                            Analysis Results
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>Prediction</h5>
+                                    <h2 id="prediction" class="mb-0"></h2>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5>Confidence</h5>
+                                    <h2 id="confidence" class="mb-0"></h2>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <h5>Analysis Time</h5>
+                                <p id="analysisTime" class="mb-0"></p>
+                            </div>
+                            <div class="mt-3">
+                                <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">
+                                    <i class="fas fa-chart-bar"></i> View Dashboard
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Info Cards -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-bolt fa-3x text-primary mb-3"></i>
+                        <h5>Real-time</h5>
+                        <p>Analysis in under 2 seconds</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-brain fa-3x text-primary mb-3"></i>
+                        <h5>AI-Powered</h5>
+                        <p>Deep learning detection</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+                        <h5>Secure</h5>
+                        <p>Privacy-focused analysis</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    console.log('Upload form script loaded');
+    
+    $('#uploadForm').on('submit', function(e) {
+        e.preventDefault();
+        console.log('Form submitted');
+        
+        const fileInput = document.getElementById('fileInput');  // ← FIXED: Use document.getElementById
+        
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            alert('Please select a file');
+            return;
+        }
+        
+        console.log('File selected:', fileInput.files[0].name);
+        
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        
+        // Show progress, hide results
+        $('#progressContainer').show();
+        $('#resultsContainer').hide();
+        $('#analyzeBtn').prop('disabled', true);
+        
+        console.log('Sending request to /api/upload');
+        
+        $.ajax({
+            url: '/api/upload',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                console.log('Success:', response);
+                
+                $('#progressContainer').hide();
+                $('#analyzeBtn').prop('disabled', false);
+                
+                // Display results
+                const prediction = response.prediction;
+                const isPredictionFake = prediction === 'FAKE';
+                
+                $('#prediction').text(prediction)
+                    .removeClass('text-success text-danger')
+                    .addClass(isPredictionFake ? 'text-danger' : 'text-success');
+                
+                $('#confidence').text((response.confidence * 100).toFixed(2) + '%');
+                $('#analysisTime').text(response.analysis_time + ' seconds');
+                
+                $('#resultHeader').removeClass('bg-success bg-danger')
+                    .addClass(isPredictionFake ? 'bg-danger text-white' : 'bg-success text-white');
+                
+                $('#resultsContainer').show();
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', status, error);
+                console.error('Response:', xhr.responseText);
+                
+                $('#progressContainer').hide();
+                $('#analyzeBtn').prop('disabled', false);
+                
+                const errorMsg = xhr.responseJSON ? xhr.responseJSON.error : 'Upload failed: ' + error;
+                alert('Error: ' + errorMsg);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
